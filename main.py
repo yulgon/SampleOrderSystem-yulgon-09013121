@@ -3,6 +3,7 @@ from controller.sample_controller import SampleController
 from controller.order_controller import OrderController
 from controller.production_controller import ProductionController
 from controller.release_controller import ReleaseController
+from controller.monitor_controller import MonitorController
 
 
 def main():
@@ -11,6 +12,7 @@ def main():
     order_controller = OrderController(view)
     production_controller = ProductionController(view)
     release_controller = ReleaseController(view)
+    monitor_controller = MonitorController(view)
 
     while True:
         view.show_menu(
@@ -22,6 +24,7 @@ def main():
                 (3, "주문 (승인/거절)"),
                 (4, "생산 라인"),
                 (5, "출고 처리"),
+                (6, "모니터링"),
             ],
         )
         choice = view.get_input("메뉴 번호를 입력하세요: ")
@@ -38,6 +41,8 @@ def main():
             production_controller.run()
         elif choice == "5":
             release_controller.run()
+        elif choice == "6":
+            monitor_controller.run()
         else:
             view.show_message("잘못된 입력입니다.")
 
