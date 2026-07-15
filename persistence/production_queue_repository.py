@@ -13,3 +13,6 @@ class ProductionQueueRepository:
 
     def list_all(self):
         return [ProductionQueueEntry.from_dict(record) for record in self._repo.list_all()]
+
+    def delete(self, entry_id):
+        return self._repo.delete(entry_id)
