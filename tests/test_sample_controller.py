@@ -34,6 +34,15 @@ def test_register_retries_on_out_of_range_yield_rate(tmp_path):
     assert samples[0].yield_rate == 0.9
 
 
+def test_register_retries_on_zero_yield_rate(tmp_path):
+    view = FakeView(inputs=["1", "Sample A", "2.5", "0", "0.9", "10", "4"])
+    controller = SampleController(view, base_dir=str(tmp_path))
+    controller.run()
+
+    samples = SampleRepository(base_dir=str(tmp_path)).list_all()
+    assert samples[0].yield_rate == 0.9
+
+
 def test_register_retries_on_negative_stock(tmp_path):
     view = FakeView(inputs=["1", "Sample A", "2.5", "0.9", "-1", "10", "4"])
     controller = SampleController(view, base_dir=str(tmp_path))

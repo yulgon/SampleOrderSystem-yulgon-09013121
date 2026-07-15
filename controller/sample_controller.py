@@ -61,8 +61,8 @@ class SampleController:
         )
         yield_rate = self._prompt_float(
             "수율: ",
-            "수율은 0~1 사이여야 합니다.",
-            lambda v: 0 <= v <= 1,
+            "수율은 0보다 크고 1 이하여야 합니다.",
+            lambda v: 0 < v <= 1,
         )
         stock = self._prompt_int(
             "현재 재고: ",
