@@ -44,12 +44,12 @@ class AppController:
             try:
                 menu_number = int(choice)
             except ValueError:
-                self.view.show_message("잘못된 입력입니다.")
+                self.view.show_error("잘못된 입력입니다.")
                 continue
 
             handler = self._handlers.get(menu_number)
             if handler is None:
-                self.view.show_message("잘못된 입력입니다.")
+                self.view.show_error("잘못된 입력입니다.")
                 continue
 
             handler()

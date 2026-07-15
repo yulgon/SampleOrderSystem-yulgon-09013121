@@ -28,7 +28,7 @@ class ProductionController:
             elif choice == "4":
                 return
             else:
-                self.view.show_message("잘못된 입력입니다.")
+                self.view.show_error("잘못된 입력입니다.")
 
     def _describe(self, position, entry, expected_completion):
         order = self.orders.get(entry.order_id)
@@ -67,7 +67,7 @@ class ProductionController:
         self.samples.update(sample.sample_id, {"stock": sample.stock + entry.shortfall})
         self.orders.update(entry.order_id, {"status": OrderStatus.CONFIRMED})
         self.queue.delete(entry.entry_id)
-        self.view.show_message(
+        self.view.show_success(
             f"생산 완료 처리: 주문ID={entry.order_id}, 재고 +{entry.shortfall}, "
             f"상태={OrderStatus.CONFIRMED}"
         )
