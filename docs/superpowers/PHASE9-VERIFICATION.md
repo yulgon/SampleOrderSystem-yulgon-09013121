@@ -128,3 +128,100 @@ across process restarts.
 After verification, `data/` was removed (`rm -rf data`) so no seeded state
 lingers in the repository's working tree; the running application recreates
 it fresh from an empty state on next use.
+
+## Supplementary Verification: Interactive Order Intake + Reject Path
+
+The whole-branch review of Phase 9 flagged a gap in the walkthrough above:
+`scripts/seed_data.py` creates all 5 orders directly via
+`OrderRepository.create()`, bypassing the console's own 시료 주문 (order
+reservation) menu entirely, and the approve/reject checklist above only ever
+exercised approvals — 주문 거절 (reject) was never driven through the live
+console by a human, even though both paths are covered by
+`tests/test_order_controller.py`. This supplementary check closes that gap by
+exercising the live 시료 주문 menu and the 거절 path interactively, against a
+brand-new empty `data/` directory (no seeded state at all), tracing the exact
+prompt sequence against `controller/app_controller.py`,
+`controller/sample_controller.py`, and `controller/order_controller.py`
+(`run_reserve` and the `3. 주문 거절` branch of `run_approve_reject`) before
+scripting stdin.
+
+**Method:** `python main.py` run once with `PYTHONIOENCODING=utf-8` against a
+directory with no pre-existing `data/`, driven by a single scripted stdin
+sequence (`stdin_supplementary.txt`, deleted after the run):
+
+```
+1
+1
+Sample X
+2.0
+0.9
+5
+4
+2
+1
+Customer A
+3
+3
+3
+1
+4
+4
+1
+3
+7
+```
+
+This drives: 시료 관리 → 시료 등록 (register "Sample X"), back to main menu,
+시료 주문 (reserve an order against sample ID 1 for "Customer A", qty 3), back
+to main menu, 주문 (승인/거절) → 주문 거절 (reject order ID 1), back to main
+menu, 모니터링 → 주문량 확인, then 종료.
+
+Command used:
+
+```
+PYTHONIOENCODING=utf-8 python main.py < stdin_supplementary.txt
+```
+
+### Results
+
+| Step | Expected | Actual | Match |
+|---|---|---|---|
+| a. 시료 등록 | new sample created, ID=1, echoed back with all fields | `시료 등록 완료: ID=1, 이름=Sample X, 평균생산시간=2.0, 수율=0.9, 재고=5` | ✅ |
+| b. 시료 주문 (menu 2) reserve | order created via the live 시료 ID / 고객명 / 주문 수량 prompts, echoed back with assigned order_id and status RESERVED | `주문 접수 완료: ID=1, 시료ID=1, 고객명=Customer A, 수량=3, 상태=RESERVED` | ✅ |
+| c. 주문 (승인/거절) → 주문 거절 | order ID=1 transitions RESERVED → REJECTED | `주문 거절 완료: ID=1, 상태=REJECTED` | ✅ |
+| d. 모니터링 → 주문량 확인 | RESERVED/CONFIRMED/PRODUCING/RELEASE all 0 (the only order is REJECTED, excluded from all 4 counted statuses) | `RESERVED: 0건`, `CONFIRMED: 0건`, `PRODUCING: 0건`, `RELEASE: 0건` | ✅ |
+
+Status bar after the reject: `[상태] 등록시료: 1 \| 총 재고: 5 \| 전체주문: 0
+\| 대기중인 생산라인: 0` — `전체주문` correctly drops to 0 since
+`AppController._show_status_bar` counts only non-`REJECTED` orders, and the
+one order that existed is now `REJECTED`; sample stock stays at 5 (reject
+never touches stock, since the order never reached `CONFIRMED`). Confirmed
+against the final `data/orders.json`:
+
+```json
+[
+  {
+    "id": 1,
+    "sample_id": 1,
+    "customer": "Customer A",
+    "qty": 3,
+    "status": "REJECTED"
+  }
+]
+```
+
+**No tracebacks or unexpected output occurred at any point in the run.**
+
+### Result
+
+Both flows the original walkthrough skipped — the live 시료 주문 intake menu
+and the 주문 거절 path — were exercised through the actual running console
+and matched every predicted value exactly. Combined with the original
+checklist above (which covered registration, search, approval variants,
+production queue, release, monitoring, and persistence), the full set of
+Phase 9 order-lifecycle transitions (`RESERVED` → `REJECTED`, `RESERVED` →
+`CONFIRMED`, `RESERVED` → `PRODUCING` → `CONFIRMED` → `RELEASE`) has now been
+driven manually through the live console at least once each.
+
+`data/` and `stdin_supplementary.txt` were removed after this check so no
+state lingers in the working tree.
