@@ -33,3 +33,17 @@ def test_create_ignores_preset_id_and_assigns_a_fresh_one(tmp_path):
     created = repo.create(second)
     assert created.entry_id == 2
     assert len(repo.list_all()) == 2
+
+
+def test_delete_removes_entry_and_returns_true(tmp_path):
+    repo = ProductionQueueRepository(base_dir=str(tmp_path))
+    entry = repo.create(_make_entry())
+    assert repo.delete(entry.entry_id) is True
+    assert repo.list_all() == []
+
+
+def test_delete_returns_false_for_missing_id(tmp_path):
+    repo = ProductionQueueRepository(base_dir=str(tmp_path))
+    repo.create(_make_entry())
+    assert repo.delete(999) is False
+    assert len(repo.list_all()) == 1
