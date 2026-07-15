@@ -24,7 +24,7 @@ class SampleController:
             elif choice == "4":
                 return
             else:
-                self.view.show_message("잘못된 입력입니다.")
+                self.view.show_error("잘못된 입력입니다.")
 
     def _prompt_float(self, prompt, error_message, is_valid):
         while True:
@@ -32,10 +32,10 @@ class SampleController:
             try:
                 value = float(raw)
             except ValueError:
-                self.view.show_message("숫자를 입력해주세요.")
+                self.view.show_error("숫자를 입력해주세요.")
                 continue
             if not is_valid(value):
-                self.view.show_message(error_message)
+                self.view.show_error(error_message)
                 continue
             return value
 
@@ -45,10 +45,10 @@ class SampleController:
             try:
                 value = int(raw)
             except ValueError:
-                self.view.show_message("숫자를 입력해주세요.")
+                self.view.show_error("숫자를 입력해주세요.")
                 continue
             if not is_valid(value):
-                self.view.show_message(error_message)
+                self.view.show_error(error_message)
                 continue
             return value
 
@@ -77,7 +77,7 @@ class SampleController:
                 stock=stock,
             )
         )
-        self.view.show_message(
+        self.view.show_success(
             f"시료 등록 완료: ID={sample.sample_id}, 이름={sample.name}, "
             f"평균생산시간={sample.avg_production_time}, 수율={sample.yield_rate}, "
             f"재고={sample.stock}"

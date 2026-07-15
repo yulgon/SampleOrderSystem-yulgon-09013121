@@ -31,7 +31,7 @@ class MonitorController:
             elif choice == "3":
                 return
             else:
-                self.view.show_message("잘못된 입력입니다.")
+                self.view.show_error("잘못된 입력입니다.")
 
     def _show_order_volume(self):
         orders = self.orders.list_all()

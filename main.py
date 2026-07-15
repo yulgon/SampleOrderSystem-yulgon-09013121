@@ -9,6 +9,8 @@ from controller.app_controller import AppController
 
 def main():
     view = ConsoleView()
+    view.show_banner()
+
     sample_controller = SampleController(view)
     order_controller = OrderController(view)
     production_controller = ProductionController(view)
