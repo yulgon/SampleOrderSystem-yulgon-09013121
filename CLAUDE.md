@@ -36,15 +36,24 @@ origin under user `yulgon`, built in this order:
 
 | Stage | Status |
 |---|---|
-| 1. ConsoleMVC | **Done** (2026-07-15). Menu/screen-flow PoC — Model/View/Controller package structure with no real business logic yet (every action echoes input or shows a placeholder). Built via `superpowers:subagent-driven-development`: 9 tasks, each with its own commit, 28 passing tests, final whole-branch review "Ready to merge: Yes". 10 commits on `main`, kept local (not pushed to origin). |
-| 2. DataPersistence | Not started. |
-| 3. DataMonitor | Not started. |
-| 4. DummyDataGenerator | Not started. |
-| 5. SampleOrderSystem | Not started (this repo currently has no commits). |
+| 1. ConsoleMVC | **Done** (2026-07-15). Menu/screen-flow PoC — Model/View/Controller package structure with no real business logic yet (every action echoes input or shows a placeholder). 9 tasks, 28 passing tests, final whole-branch review "Ready to merge: Yes". 10 commits on `main`, kept local. |
+| 2. DataPersistence | **Done** (2026-07-15). Generic `JsonRepository` — one JSON file per collection, dict in/dict out, sequential auto-increment ids via max+1, deliberately no domain-specific types. 5 tasks, 12 passing tests, "Ready to merge: Yes". 7 commits on `main`, kept local. |
+| 3. DataMonitor | **Done** (2026-07-15). Read-only admin console — `reader.py` (list/read collections, own minimal impl) + `MonitorConsole` (list → detail → refresh/back/exit). 5 tasks, 17 passing tests. Final whole-branch review caught a real cross-task crash (a `*.json`-named directory or malformed JSON file crashed the app when selected/refreshed) — fixed and re-verified. 9 commits on `main`, kept local. |
+| 4. DummyDataGenerator | **Done** (2026-07-15). Interactive menu tool generating dummy Sample/Order records — `JsonStore` (own max+1 id reimplementation), `factory.py` (structural-only tests for randomness), `GeneratorConsole` (blocks order generation until samples exist, references random existing sample_id). 5 tasks, 16 passing tests, "Ready to merge: Yes" — no cross-task bugs this time. 7 commits on `main`, kept local. |
+| 5. SampleOrderSystem | **Next up** (this repo currently only has this `CLAUDE.md` committed). |
 
-`PRD.md` and `PLAN.md` for this repo have not been written yet — they come
-once stages 1-4 are far enough along to know what this repo actually
-integrates.
+All 4 PoC stages built via `superpowers:subagent-driven-development` (fresh
+implementer subagent per task, task-scoped review, final whole-branch
+review) — see each stage's own repo for its design spec and plan under
+`docs/superpowers/`.
+
+`PRD.md` and `PLAN.md` for this repo have not been written yet — now that
+all 4 PoC stages are done, the next step is brainstorming this repo's real
+integration: reusing ConsoleMVC's MVC split, DataPersistence's
+`JsonRepository`, DataMonitor's read/refresh pattern, and
+DummyDataGenerator's factories, wired to real Sample/Order business logic
+(status transitions, stock math, production scheduling) that none of the
+4 PoCs implemented.
 
 ## Domain summary
 
