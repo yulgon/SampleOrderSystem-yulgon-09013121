@@ -92,10 +92,25 @@ DummyDataGenerator's factories, wired to real Sample/Order business logic
   (`docs/superpowers/plans/`) → execution via
   `superpowers:subagent-driven-development` (fresh implementer subagent per
   task, task-scoped review, final whole-branch review).
-- **Branch strategy:** work happens directly on `main` in each repo (no
-  feature branches, no PRs) — this is a solo learning project, confirmed
-  explicitly with the user for ConsoleMVC and expected to hold for the
-  remaining stages unless stated otherwise.
+- **TDD commit staging — RED / GREEN / REVIEW:** every code task's commits
+  are tagged by stage, prefixed on the commit title:
+  - `[RED]` — the failing test is written and confirmed to fail for the
+    right reason (committed even though it fails, so the red state is a
+    real point in history, not just a transient local step).
+  - `[GREEN]` — the minimal implementation that makes the test(s) pass.
+  - `[REVIEW]` — any changes made in response to task-reviewer or
+    whole-branch-reviewer findings (fix commits after a review round).
+  Example: `[RED] add failing test for JsonRepository.create()`,
+  `[GREEN] implement JsonRepository.create() with max+1 id`,
+  `[REVIEW] fix pycache committed alongside scaffolding`. This applies from
+  the SampleOrderSystem stage onward — the 4 already-completed PoC stages
+  used plain `feat:`-style commit messages without this staging and are not
+  being retroactively rewritten.
+- **Branch strategy:** starting with SampleOrderSystem, work happens on
+  feature branches with a PR opened for the user to review and merge
+  manually — no more direct commits to `main`. (The 4 PoC stages committed
+  directly to `main`, confirmed explicitly with the user at the time; that
+  convention changed for this stage.)
 - **PoC scope discipline:** each PoC stage implements only what its own
   concern requires (e.g., ConsoleMVC = menu/screen flow only, no persistence,
   no computed business logic) and defers the next concern to its own stage.

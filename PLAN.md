@@ -34,6 +34,15 @@ and conventions already established across the 4 PoC stages.
 - **Every phase ends working end-to-end**, not just unit-tested — a
   manual console smoke test is part of each phase's definition of done,
   same as every PoC stage.
+- **RED / GREEN / REVIEW commit staging.** Every code task's commits are
+  tagged by stage, prefixed on the commit title: `[RED]` (failing test
+  committed), `[GREEN]` (minimal implementation makes it pass), `[REVIEW]`
+  (fix commits from task/whole-branch review findings). See `CLAUDE.md`
+  for the full convention and examples.
+- **Branch + PR, not direct-to-main.** Starting with this stage, each
+  phase's implementation happens on its own feature branch; the user
+  reviews and merges the PR manually. This replaces the 4 PoC stages'
+  direct-to-`main` convention.
 
 ## 3. Target Package Structure
 
@@ -212,5 +221,7 @@ is called out explicitly so it isn't silently assumed mid-implementation.
 
 Brainstorm Phase 1 (`superpowers:brainstorming`) to produce its design spec
 and implementation plan, then execute via
-`superpowers:subagent-driven-development`, same process as all 4 PoC
-stages.
+`superpowers:subagent-driven-development` on a dedicated feature branch —
+same task-by-task process as all 4 PoC stages, but with `[RED]`/`[GREEN]`/
+`[REVIEW]`-prefixed commits and a PR opened for manual merge instead of
+committing straight to `main`.
