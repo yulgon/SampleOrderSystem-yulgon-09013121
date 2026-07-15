@@ -50,3 +50,32 @@ def test_delete_removes_order(tmp_path):
     created = repo.create(_make_order())
     assert repo.delete(created.order_id) is True
     assert repo.get(created.order_id) is None
+
+
+def test_update_does_not_persist_invalid_changes(tmp_path):
+    repo = OrderRepository(base_dir=str(tmp_path))
+    created = repo.create(_make_order(qty=5))
+    try:
+        repo.update(created.order_id, {"qty": -1})
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+    fresh_repo = OrderRepository(base_dir=str(tmp_path))
+    assert fresh_repo.get(created.order_id) == created
+
+
+def test_create_ignores_preset_id_and_assigns_a_fresh_one(tmp_path):
+    repo = OrderRepository(base_dir=str(tmp_path))
+    repo.create(_make_order())
+    preset = Order(
+        sample_id=1,
+        customer="Globex",
+        qty=3,
+        status=OrderStatus.RESERVED,
+        order_id=1,
+    )
+    second = repo.create(preset)
+    assert second.order_id == 2
+    all_orders = repo.list_all()
+    assert len(all_orders) == 2
+    assert {o.order_id for o in all_orders} == {1, 2}

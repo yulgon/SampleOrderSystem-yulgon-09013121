@@ -7,7 +7,8 @@ class OrderRepository:
         self._repo = JsonRepository("orders", base_dir=base_dir)
 
     def create(self, order):
-        record = self._repo.create(order.to_dict())
+        data = {k: v for k, v in order.to_dict().items() if k != "id"}
+        record = self._repo.create(data)
         return Order.from_dict(record)
 
     def get(self, order_id):
@@ -18,8 +19,12 @@ class OrderRepository:
         return [Order.from_dict(record) for record in self._repo.list_all()]
 
     def update(self, order_id, changes):
+        existing = self._repo.get(order_id)
+        if existing is None:
+            return None
+        Order.from_dict({**existing, **changes})
         record = self._repo.update(order_id, changes)
-        return Order.from_dict(record) if record else None
+        return Order.from_dict(record)
 
     def delete(self, order_id):
         return self._repo.delete(order_id)
