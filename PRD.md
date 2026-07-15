@@ -70,7 +70,7 @@ same console, choosing whichever menu their task requires.
 
 | Field | Description |
 |---|---|
-| `sample_id` | Unique identifier |
+| `sample_id` | System-assigned sequential integer (max existing id + 1), same scheme as `DataPersistence`'s `JsonRepository` — the user never enters this |
 | `name` | 시료명 |
 | `avg_production_time` | 평균 생산시간 (used to compute total production time) |
 | `yield_rate` | 수율 — fraction of production output that is usable (0.9 = 90% of produced units are good). Formula: `수율 = 정상 생산 수량 / 총 생산 수량` |
@@ -80,8 +80,8 @@ same console, choosing whichever menu their task requires.
 
 | Field | Description |
 |---|---|
-| `order_id` | Unique identifier |
-| `sample_id` | The sample being ordered |
+| `order_id` | System-assigned sequential integer (max existing id + 1), same scheme as `sample_id` |
+| `sample_id` | The sample being ordered (user selects an existing `sample_id`, doesn't invent one) |
 | `customer` | 고객명 |
 | `qty` | 주문 수량 |
 | `status` | One of the 5 statuses below |
@@ -115,8 +115,9 @@ Displays, refreshed on every menu redraw:
 
 ### 6.1 시료 관리 (Sample Management)
 
-- **시료 등록 (Register):** create a new `Sample` — collects `sample_id`,
-  `name`, `avg_production_time`, `yield_rate`, `stock`.
+- **시료 등록 (Register):** create a new `Sample` — collects `name`,
+  `avg_production_time`, `yield_rate`, `stock`; `sample_id` is
+  system-assigned (see §5.1).
 - **시료 조회 (List):** show every registered sample, including current
   stock.
 - **시료 검색 (Search):** find a sample by name (or other attributes).
@@ -124,8 +125,9 @@ Displays, refreshed on every menu redraw:
 ### 6.2 시료 주문 (Sample Ordering)
 
 - **시료 예약 (Reserve):** the order manager records a customer's desired
-  sample and quantity. Collects, in order: `sample_id`, `customer`, `qty`.
-  The new order is created with status `RESERVED`.
+  sample and quantity. Collects, in order: `sample_id` (of an existing
+  sample), `customer`, `qty`. `order_id` is system-assigned (see §5.2). The
+  new order is created with status `RESERVED`.
 
 ### 6.3 주문 (승인/거절) (Order Approve/Reject)
 
@@ -143,14 +145,12 @@ Displays, refreshed on every menu redraw:
 - **주문량 확인 (Order volume):** counts of orders grouped by status —
   `RESERVED`, `CONFIRMED`, `PRODUCING`, `RELEASE`. **`REJECTED` orders are
   excluded** (not a "valid" order per `description.md`).
-- **재고량 확인 (Stock levels):** per-sample current stock, annotated
-  against outstanding order demand for that sample:
-  - 여유 (surplus) — stock comfortably covers outstanding demand
-  - 부족 (shortage) — stock is below outstanding demand but > 0
-  - 고갈 (depleted) — stock is exactly 0
-
-  *(Exact surplus/shortage thresholds are not fully pinned down in
-  `description.md` beyond the three labels — see §9 Open Questions.)*
+- **재고량 확인 (Stock levels):** per-sample current stock, compared
+  against that sample's outstanding order demand (sum of `qty` across its
+  `RESERVED` + `PRODUCING` orders):
+  - 여유 (surplus) — `stock >= outstanding demand`
+  - 부족 (shortage) — `0 < stock < outstanding demand`
+  - 고갈 (depleted) — `stock == 0`
 
 ### 6.5 출고 처리 (Release)
 
@@ -160,24 +160,35 @@ Displays, refreshed on every menu redraw:
 ### 6.6 생산 라인 (Production Line)
 
 A single production line, producing one sample type at a time, only for
-samples that have an actual order-driven shortfall.
+samples that have an actual order-driven shortfall. Each approved order
+that lacked sufficient stock becomes its **own** queue entry — even if
+another order for the *same* sample is already `PRODUCING` — and entries
+are produced strictly one at a time in FIFO order (no merging of
+same-sample shortfalls into a single production run).
 
-- **생산 현황 (Current status):** information about whatever is currently
-  being produced (exact level of detail is left to implementation — e.g.
-  order reference, quantity produced so far).
-- **대기 주문 확인 (Pending queue):** the FIFO queue of shortfalls waiting
-  for the line to become free.
+- **생산 현황 (Current status):** for the entry currently in production,
+  display: 순서 (its position when it started, or "현재 생산중"),
+  주문번호 (order_id), 시료 (sample name), 주문량 (order qty), 부족분
+  (shortfall), 실생산량 (actual production qty), 예상완료 (expected
+  completion — start time + 총 생산 시간, or however time is tracked in
+  this console context).
+- **대기 주문 확인 (Pending queue):** the same field set (순서, 주문번호,
+  시료, 주문량, 부족분, 실생산량, 예상완료) for every entry still waiting
+  in the FIFO queue, in queue order.
 - **Scheduling strategy:** FIFO — first shortfall queued is the first
-  produced.
+  produced; the line processes one queue entry fully before starting the
+  next, regardless of whether entries share a sample.
 - **Production math**, applied when a shortfall enters production:
-  - 실 생산량 (actual production quantity) = 부족분 (shortfall) / 수율
-    (yield_rate) — i.e., production must overshoot the raw shortfall to
-    account for expected defect loss.
+  - 실 생산량 (actual production quantity) = `ceil(부족분 / 수율)` — always
+    rounded **up**, so production reliably covers the shortfall even after
+    expected defect loss (e.g. shortfall 10, yield 0.9 → `ceil(11.11)` =
+    12 produced).
   - 총 생산 시간 (total production time) = 평균 생산시간 (avg_production_time)
-    × 실 생산량 (actual production quantity).
-  - On completion: add the shortfall quantity to the sample's stock
-    (defective units are not counted as usable stock), and transition the
-    associated order from `PRODUCING` to `CONFIRMED`.
+    × 실 생산량 (actual production quantity, the rounded-up value above).
+  - On completion: add the shortfall quantity (not the rounded-up 실생산량
+    — the excess above the shortfall accounts for defects and isn't extra
+    usable stock beyond what was needed) to the sample's stock, and
+    transition the associated order from `PRODUCING` to `CONFIRMED`.
 
 ## 7. Non-Functional Requirements
 
@@ -212,27 +223,26 @@ samples that have an actual order-driven shortfall.
   and `DataMonitor` can read this system's real `data/` directory without
   changes.
 
-## 9. Open Questions
+## 9. Decisions Log
 
-These are gaps in `description.md` that should be resolved during this
-stage's brainstorming before implementation, not assumed silently:
+These were originally open gaps in `description.md`; each was resolved with
+the user and folded into the relevant section above. Recorded here for
+traceability:
 
-1. **재고량 확인 thresholds:** what exact stock-vs-demand ratio separates
-   여유 / 부족 / 고갈? (고갈 = 0 is clear; the 여유/부족 boundary is not
-   numerically specified.)
-2. **생산 현황 display level:** `description.md` explicitly says "표기할
-   정보 수준은 자율적으로 결정" (display detail is at implementer's
-   discretion) — needs a concrete decision.
-3. **Concurrent shortfalls for the same sample:** if multiple orders for
-   the same sample are approved while one is already `PRODUCING`, does a
-   second shortfall start a new production run, extend the existing one,
-   or queue separately? Not specified.
-4. **시료 ID format:** whether `sample_id`/`order_id` are user-entered
-   strings (as ConsoleMVC's PoC assumed) or system-assigned sequential
-   integers (as `DataPersistence`'s `JsonRepository` assigns) needs to be
-   decided for the real system — the two PoCs modeled this differently.
-5. **Rounding rules** for 실 생산량 (division by yield_rate will rarely be
-   a whole number) — round up, down, or nearest?
+1. **재고량 확인 thresholds** (§6.4): 여유 = `stock >= outstanding demand`,
+   부족 = `0 < stock < outstanding demand`, 고갈 = `stock == 0`.
+2. **생산 현황 display level** (§6.6): 순서, 주문번호, 시료, 주문량,
+   부족분, 실생산량, 예상완료.
+3. **Concurrent shortfalls for the same sample** (§6.6): each shortfall is
+   its own FIFO queue entry, produced strictly one at a time — no merging
+   of same-sample shortfalls.
+4. **ID format** (§5.1, §5.2): `sample_id`/`order_id` are system-assigned
+   sequential integers (max existing id + 1), matching `DataPersistence`'s
+   `JsonRepository` scheme rather than `ConsoleMVC`'s PoC-era user-entered
+   ID assumption.
+5. **Rounding rule for 실생산량** (§6.6): always round up (`ceil`), so
+   production conservatively covers the shortfall even after expected
+   defect loss.
 
 ## 10. References
 
