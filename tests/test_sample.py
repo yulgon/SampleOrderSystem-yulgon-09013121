@@ -40,3 +40,8 @@ def test_raises_on_out_of_range_yield_rate():
 def test_raises_on_negative_stock():
     with pytest.raises(ValueError):
         Sample(name="X", avg_production_time=2.0, yield_rate=0.9, stock=-1)
+
+
+def test_raises_on_zero_yield_rate():
+    with pytest.raises(ValueError):
+        Sample(name="X", avg_production_time=2.0, yield_rate=0, stock=10)

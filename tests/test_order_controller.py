@@ -1,3 +1,5 @@
+import pytest
+
 from model.sample import Sample
 from model.order import Order, OrderStatus
 from model.production_queue_entry import ProductionQueueEntry
@@ -158,3 +160,12 @@ def test_invalid_submenu_choice_shows_error(tmp_path):
     controller = OrderController(view, base_dir=str(tmp_path))
     controller.run_approve_reject()
     assert "잘못된 입력입니다." in view.messages
+
+
+def test_zero_yield_rate_sample_cannot_be_registered(tmp_path):
+    # Sample rejects yield_rate == 0 at construction, so _approve()'s
+    # `shortfall / sample.yield_rate` division can never be reached with a
+    # zero divisor: no sample with yield_rate == 0 can ever exist in the
+    # repository for an insufficient-stock approval to look up.
+    with pytest.raises(ValueError):
+        Sample(name="Zero Yield", avg_production_time=2.0, yield_rate=0, stock=10)

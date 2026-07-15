@@ -12,8 +12,8 @@ class Sample:
     def __post_init__(self):
         if self.avg_production_time <= 0:
             raise ValueError("avg_production_time must be positive")
-        if not (0 <= self.yield_rate <= 1):
-            raise ValueError("yield_rate must be between 0 and 1")
+        if not (0 < self.yield_rate <= 1):
+            raise ValueError("yield_rate must be greater than 0 and at most 1")
         if self.stock < 0:
             raise ValueError("stock must not be negative")
 
