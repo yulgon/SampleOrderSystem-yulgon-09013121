@@ -50,3 +50,32 @@ def test_delete_removes_sample(tmp_path):
     created = repo.create(_make_sample())
     assert repo.delete(created.sample_id) is True
     assert repo.get(created.sample_id) is None
+
+
+def test_update_does_not_persist_invalid_changes(tmp_path):
+    repo = SampleRepository(base_dir=str(tmp_path))
+    created = repo.create(_make_sample(stock=5))
+    try:
+        repo.update(created.sample_id, {"stock": -1})
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+    fresh_repo = SampleRepository(base_dir=str(tmp_path))
+    assert fresh_repo.get(created.sample_id) == created
+
+
+def test_create_ignores_preset_id_and_assigns_a_fresh_one(tmp_path):
+    repo = SampleRepository(base_dir=str(tmp_path))
+    repo.create(_make_sample())
+    preset = Sample(
+        name="Sample B",
+        avg_production_time=1.0,
+        yield_rate=0.5,
+        stock=1,
+        sample_id=1,
+    )
+    second = repo.create(preset)
+    assert second.sample_id == 2
+    all_samples = repo.list_all()
+    assert len(all_samples) == 2
+    assert {s.sample_id for s in all_samples} == {1, 2}
