@@ -8,9 +8,9 @@ from persistence.production_queue_repository import ProductionQueueRepository
 from tests.fakes import FakeView
 
 
-def _register_sample(base_dir):
+def _register_sample(base_dir, stock=10, yield_rate=0.9, avg_time=2.5):
     repo = SampleRepository(base_dir=base_dir)
-    return repo.create(Sample(name="Sample A", avg_production_time=2.5, yield_rate=0.9, stock=10))
+    return repo.create(Sample(name="Sample A", avg_production_time=avg_time, yield_rate=yield_rate, stock=stock))
 
 
 def test_run_reserve_creates_order_with_reserved_status(tmp_path):
@@ -68,11 +68,6 @@ def test_run_reserve_retries_on_non_positive_qty(tmp_path):
 
     orders = OrderRepository(base_dir=str(tmp_path)).list_all()
     assert orders[0].qty == 5
-
-
-def _register_sample(base_dir, stock=10, yield_rate=0.9, avg_time=2.0):
-    repo = SampleRepository(base_dir=base_dir)
-    return repo.create(Sample(name="Sample A", avg_production_time=avg_time, yield_rate=yield_rate, stock=stock))
 
 
 def _reserve_order(base_dir, sample_id, qty=5, customer="Acme"):
