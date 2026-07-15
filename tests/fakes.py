@@ -10,6 +10,12 @@ class FakeView:
     def show_message(self, message):
         self.messages.append(message)
 
+    def show_error(self, message):
+        self.messages.append(message)
+
+    def show_success(self, message):
+        self.messages.append(message)
+
     def show_menu(self, title, options):
         self.menus.append((title, options))
 
