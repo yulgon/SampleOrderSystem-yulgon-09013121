@@ -15,3 +15,13 @@ def test_show_message_prints_the_message(capsys):
     view.show_message("hello")
     captured = capsys.readouterr()
     assert "hello" in captured.out
+
+
+def test_show_status_bar_prints_all_four_values(capsys):
+    view = ConsoleView()
+    view.show_status_bar(registered_samples=2, total_stock=15, total_orders=3, waiting_lines=1)
+    captured = capsys.readouterr()
+    assert "등록시료: 2" in captured.out
+    assert "총 재고: 15" in captured.out
+    assert "전체주문: 3" in captured.out
+    assert "대기중인 생산라인: 1" in captured.out
